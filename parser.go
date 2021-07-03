@@ -47,35 +47,53 @@ func (m *fsm) flush() {
 	}
 }
 
+func isBlank(data []byte) bool {
+	return len(data) == 0
+}
+
+func isHeader(data []byte) bool {
+	return len(data) > 0 && data[0] == '#'
+}
+
+func triggerBreak(data []byte) bool {
+	return len(data) == 0 || data[len(data)-1] == '.'
+}
+
+func isFence(data []byte) bool {
+	return len(data) >= 3 && string(data[0:3]) == "```"
+}
+
+func needsFence(data []byte) bool {
+	return len(data) >= 4 && string(data[0:4]) == "    "
+}
+
 func normal(m *fsm, data []byte) stateFn {
 	m.flush()
 	// blank line
-	if len(data) == 0 {
+	if isBlank(data) {
 		fmt.Fprintf(m.out, "\n")
 		return normal
 	}
 	// header
-	if data[0] == '#' {
+	if isHeader(data) {
 		fmt.Fprintf(m.out, string(data)+"\n")
 		return normal
 	}
-	if len(data) >= 3 && string(data[0:3]) == "```" {
+	if isFence(data) {
 		fmt.Fprintf(m.out, string(data)+"\n")
 		return fence
 	}
-	if len(data) >= 4 && string(data[0:4]) == "    " {
+	if needsFence(data) {
 		fmt.Fprintf(m.out, string("```")+"\n")
 		fmt.Fprintf(m.out, string(data)+"\n")
 		m.pending = []byte("```")
-		return tofence
+		return toFence
 	}
 	if data[len(data)-1] != '.' {
 		m.buffer = append(m.buffer, data...)
 		return paragraph
 	}
 	// TODO
-	// find linebreaks
-	// find code fences
 	// find links
 	// collapse lists
 	fmt.Fprintf(m.out, string(data)+"\n")
@@ -85,23 +103,23 @@ func normal(m *fsm, data []byte) stateFn {
 
 func fence(m *fsm, data []byte) stateFn {
 	fmt.Fprintf(m.out, string(data)+"\n")
-	if len(data) >= 3 && string(data[0:3]) == "```" {
+	if isFence(data) {
 		return normal
 	}
 	return fence
 }
 
-func tofence(m *fsm, data []byte) stateFn {
-	if len(data) >= 4 && string(data[0:4]) == "    " {
+func toFence(m *fsm, data []byte) stateFn {
+	if needsFence(data) {
 		fmt.Fprintf(m.out, string(data)+"\n")
-		return tofence
+		return toFence
 	}
 	fmt.Fprintf(m.out, string(data)+"\n")
 	return normal
 }
 
 func paragraph(m *fsm, data []byte) stateFn {
-	if len(data) == 0 || data[len(data)-1] == '.' {
+	if triggerBreak(data) {
 		m.buffer = append(m.buffer, data...)
 		fmt.Fprintf(m.out, string(m.buffer)+"\n")
 		m.buffer = m.buffer[:0]
