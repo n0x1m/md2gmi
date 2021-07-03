@@ -53,14 +53,7 @@ func write(out string, data <-chan []byte, quit chan struct{}) error {
 
 	NewParser(data, w, quit).Parse()
 
-	for {
-		select {
-		case <-quit:
-			return nil
-		case b := <-data:
-			fmt.Fprintf(w, string(b)+"\n")
-		}
-	}
+	return nil
 }
 
 func main() {
