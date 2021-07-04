@@ -2,14 +2,15 @@ package main
 
 import (
 	"bufio"
-	"bytes"
-	"encoding/gob"
 	"flag"
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/n0x1m/md2gmi/pipe"
 )
 
+/*
 type WorkItem struct {
 	index   int
 	payload []byte
@@ -39,6 +40,7 @@ func (w *WorkItem) Payload() []byte {
 	}
 	return tmp
 }
+*/
 
 func reader(in string) (io.Reader, error) {
 	if in != "" {
@@ -70,39 +72,27 @@ func write(w io.Writer, b []byte) {
 	fmt.Fprint(w, string(b))
 }
 
-type ir struct {
-	r io.Reader
+func source(r io.Reader) pipe.Source {
+	return func() chan pipe.StreamItem {
+		data := make(chan pipe.StreamItem)
+		s := bufio.NewScanner(r)
+		go func() {
+			i := 0
+			for s.Scan() {
+				data <- pipe.NewItem(i, s.Bytes())
+				i += 1
+			}
+			close(data)
+		}()
+		return data
+	}
 }
 
-func InputStream(r io.Reader) *ir {
-	return &ir{r: r}
-}
-
-func (m *ir) Output() chan WorkItem {
-	data := make(chan WorkItem)
-	s := bufio.NewScanner(m.r)
-	go func() {
-		i := 0
-		for s.Scan() {
-			data <- New(i, s.Bytes())
-			i += 1
+func sink(w io.Writer) pipe.Sink {
+	return func(dest chan pipe.StreamItem) {
+		for b := range dest {
+			write(w, b.Payload())
 		}
-		close(data)
-	}()
-	return data
-}
-
-type ow struct {
-	w io.Writer
-}
-
-func OutputStream(w io.Writer) *ow {
-	return &ow{w: w}
-}
-
-func (m *ow) Input(data chan WorkItem) {
-	for b := range data {
-		write(m.w, b.Payload())
 	}
 }
 
@@ -125,20 +115,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	source := InputStream(r)
-	sink := OutputStream(w)
 	preproc := NewPreproc()
 
 	//sink.Input(preproc.Process(source.Output()))
-	sink.Input(
-		FormatLinks(
-			FormatHeadings(
-				RemoveComments(
-					RemoveFrontMatter(
-						preproc.Process(source.Output()),
-					),
-				),
-			),
-		),
-	)
+	s := pipe.New()
+	s.Use(preproc.Process)
+	s.Use(RemoveFrontMatter)
+	s.Use(RemoveComments)
+	s.Use(FormatHeadings)
+	s.Use(FormatLinks)
+	s.Handle(source(r), sink(w))
 }

@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"regexp"
+
+	"github.com/n0x1m/md2gmi/pipe"
 )
 
 // state function
@@ -13,7 +15,7 @@ type fsm struct {
 	state stateFn
 
 	i   int
-	out chan WorkItem
+	out chan pipe.StreamItem
 
 	// combining multiple input lines
 	blockBuffer []byte
@@ -26,8 +28,8 @@ func NewPreproc() *fsm {
 	return &fsm{}
 }
 
-func (m *fsm) Process(in chan WorkItem) chan WorkItem {
-	m.out = make(chan WorkItem)
+func (m *fsm) Process(in chan pipe.StreamItem) chan pipe.StreamItem {
+	m.out = make(chan pipe.StreamItem)
 	go func() {
 		for m.state = normal; m.state != nil; {
 			b, ok := <-in
@@ -49,7 +51,7 @@ func (m *fsm) Process(in chan WorkItem) chan WorkItem {
 func (m *fsm) sync() {
 	if len(m.sendBuffer) > 0 {
 		m.sendBuffer = append(m.sendBuffer, '\n')
-		m.out <- New(m.i, m.sendBuffer)
+		m.out <- pipe.NewItem(m.i, m.sendBuffer)
 		m.sendBuffer = m.sendBuffer[:0]
 		m.i += 1
 	}

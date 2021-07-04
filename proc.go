@@ -4,13 +4,24 @@ import (
 	"bytes"
 	"fmt"
 	"regexp"
+
+	"github.com/n0x1m/md2gmi/pipe"
 )
 
-func FormatLinks(in chan WorkItem) chan WorkItem {
-	out := make(chan WorkItem)
+func FormatLinks(in chan pipe.StreamItem) chan pipe.StreamItem {
+	out := make(chan pipe.StreamItem)
 	go func() {
+		fenceOn := false
 		for b := range in {
-			out <- New(b.Index(), formatLinks(b.Payload()))
+			data := b.Payload()
+			if isFence(data) {
+				fenceOn = !fenceOn
+			}
+			if fenceOn {
+				out <- pipe.NewItem(b.Index(), b.Payload())
+			} else {
+				out <- pipe.NewItem(b.Index(), formatLinks(b.Payload()))
+			}
 		}
 		close(out)
 	}()
@@ -37,8 +48,8 @@ func formatLinks(data []byte) []byte {
 	return data
 }
 
-func RemoveComments(in chan WorkItem) chan WorkItem {
-	out := make(chan WorkItem)
+func RemoveComments(in chan pipe.StreamItem) chan pipe.StreamItem {
+	out := make(chan pipe.StreamItem)
 	go func() {
 		re := regexp.MustCompile(`<!--.*-->`)
 		for b := range in {
@@ -46,16 +57,16 @@ func RemoveComments(in chan WorkItem) chan WorkItem {
 			for _, match := range re.FindAllSubmatch(data, -1) {
 				data = bytes.Replace(data, match[0], []byte(""), 1)
 			}
-			out <- New(b.Index(), append(bytes.TrimSpace(data), '\n'))
-			//out <- New(b.Index(), data)
+			out <- pipe.NewItem(b.Index(), append(bytes.TrimSpace(data), '\n'))
+			//out <- pipe.NewItem(b.Index(), data)
 		}
 		close(out)
 	}()
 	return out
 }
 
-func RemoveFrontMatter(in chan WorkItem) chan WorkItem {
-	out := make(chan WorkItem)
+func RemoveFrontMatter(in chan pipe.StreamItem) chan pipe.StreamItem {
+	out := make(chan pipe.StreamItem)
 	go func() {
 		re := regexp.MustCompile(`---.*---`)
 		for b := range in {
@@ -63,16 +74,16 @@ func RemoveFrontMatter(in chan WorkItem) chan WorkItem {
 			for _, match := range re.FindAllSubmatch(data, -1) {
 				data = bytes.Replace(data, match[0], []byte(""), 1)
 			}
-			out <- New(b.Index(), append(bytes.TrimSpace(data), '\n'))
-			//out <- New(b.Index(), data)
+			out <- pipe.NewItem(b.Index(), append(bytes.TrimSpace(data), '\n'))
+			//out <- pipe.NewItem(b.Index(), data)
 		}
 		close(out)
 	}()
 	return out
 }
 
-func FormatHeadings(in chan WorkItem) chan WorkItem {
-	out := make(chan WorkItem)
+func FormatHeadings(in chan pipe.StreamItem) chan pipe.StreamItem {
+	out := make(chan pipe.StreamItem)
 	go func() {
 		re := regexp.MustCompile(`^[#]{4,}`)
 		re2 := regexp.MustCompile(`^(#+)[^# ]`)
@@ -89,7 +100,7 @@ func FormatHeadings(in chan WorkItem) chan WorkItem {
 				data = append(data, '\n')
 			}
 			// writeback
-			out <- New(b.Index(), data)
+			out <- pipe.NewItem(b.Index(), data)
 
 		}
 		close(out)
