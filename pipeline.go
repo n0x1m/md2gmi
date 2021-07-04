@@ -1,13 +1,13 @@
 package main
 
 type Node interface {
-	Pipeline(<-chan []byte) <-chan []byte
+	Pipeline(chan []byte) chan []byte
 }
 
 type Source interface {
-	Input() <-chan []byte
+	Output() chan []byte
 }
 
 type Sink interface {
-	Output(<-chan []byte)
+	Input(chan []byte)
 }
