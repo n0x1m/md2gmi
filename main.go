@@ -10,38 +10,6 @@ import (
 	"github.com/n0x1m/md2gmi/pipe"
 )
 
-/*
-type WorkItem struct {
-	index   int
-	payload []byte
-}
-
-func New(index int, payload []byte) WorkItem {
-	w := WorkItem{index: index}
-	var indexBuffer bytes.Buffer
-	encoder := gob.NewEncoder(&indexBuffer)
-	if err := encoder.Encode(payload); err != nil {
-		panic(err)
-	}
-	w.payload = indexBuffer.Bytes()
-	return w
-}
-
-func (w *WorkItem) Index() int {
-	return w.index
-}
-
-func (w *WorkItem) Payload() []byte {
-	buf := bytes.NewReader(w.payload)
-	decoder := gob.NewDecoder(buf)
-	var tmp []byte
-	if err := decoder.Decode(&tmp); err != nil {
-		panic(err)
-	}
-	return tmp
-}
-*/
-
 func reader(in string) (io.Reader, error) {
 	if in != "" {
 		file, err := os.Open(in)
