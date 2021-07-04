@@ -54,6 +54,23 @@ func RemoveComments(in chan WorkItem) chan WorkItem {
 	return out
 }
 
+func RemoveFrontMatter(in chan WorkItem) chan WorkItem {
+	out := make(chan WorkItem)
+	go func() {
+		re := regexp.MustCompile(`---.*---`)
+		for b := range in {
+			data := b.Payload()
+			for _, match := range re.FindAllSubmatch(data, -1) {
+				data = bytes.Replace(data, match[0], []byte(""), 1)
+			}
+			out <- New(b.Index(), append(bytes.TrimSpace(data), '\n'))
+			//out <- New(b.Index(), data)
+		}
+		close(out)
+	}()
+	return out
+}
+
 func FormatHeadings(in chan WorkItem) chan WorkItem {
 	out := make(chan WorkItem)
 	go func() {

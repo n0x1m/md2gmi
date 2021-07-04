@@ -39,7 +39,6 @@ func (m *fsm) Process(in chan WorkItem) chan WorkItem {
 				continue
 			}
 
-			// fmt.Printf("i preproc '%v'\n", string(b.Payload()))
 			m.state = m.state(m, b.Payload())
 			m.sync()
 		}
@@ -49,9 +48,7 @@ func (m *fsm) Process(in chan WorkItem) chan WorkItem {
 
 func (m *fsm) sync() {
 	if len(m.sendBuffer) > 0 {
-		//m.sendBuffer = bytes.TrimSpace(m.sendBuffer)
 		m.sendBuffer = append(m.sendBuffer, '\n')
-		//fmt.Printf("o preproc '%v'\n", string(m.sendBuffer))
 		m.out <- New(m.i, m.sendBuffer)
 		m.sendBuffer = m.sendBuffer[:0]
 		m.i += 1
@@ -60,7 +57,6 @@ func (m *fsm) sync() {
 
 func (m *fsm) blockFlush() {
 	// blockBuffer to sendbuffer
-	//fmt.Println("block ", string(m.blockBuffer))
 	m.sendBuffer = append(m.sendBuffer, m.blockBuffer...)
 	m.blockBuffer = m.blockBuffer[:0]
 
@@ -80,7 +76,7 @@ func isTerminated(data []byte) bool {
 }
 
 func handleList(data []byte) ([]byte, bool) {
-	re := regexp.MustCompile(`([ ]*[-*])`)
+	re := regexp.MustCompile(`^([ ]*[-*^]{1,1})[^*-]`)
 	sub := re.FindSubmatch(data)
 	// if lists, collapse to single level
 	if len(sub) > 1 {

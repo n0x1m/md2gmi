@@ -134,7 +134,9 @@ func main() {
 		FormatLinks(
 			FormatHeadings(
 				RemoveComments(
-					preproc.Process(source.Output()),
+					RemoveFrontMatter(
+						preproc.Process(source.Output()),
+					),
 				),
 			),
 		),

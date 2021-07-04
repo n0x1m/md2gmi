@@ -23,11 +23,11 @@ Usage of ./md2gmi:
 
     go get github.com/n0x1m/md2gmi
     cat file.md | md2gmi
-    md2gmi -in file.md -out file.gmi
+    md2gmi -i file.md -o file.gmi
 
 The top part of this readme parses from
 
-```md
+```markdown
 Convert Markdown to Gemini [gemtext](https://gemini.circumlunar.space/docs/gemtext.gmi) markup with
 Go. Working with streams and pipes for UNIX like behavior utilizing Go channels. Processing streams
 line by line is slightly more complex than it needs to be as I'm playing with channels and state
@@ -42,7 +42,9 @@ protocol](https://gemini.circumlunar.space/) and the [protocol
 spec](https://gemini.circumlunar.space/docs/specification.gmi).
 ```
 
-```md
+to
+
+```markdown
 Convert Markdown to Gemini gemtext[1] markup with Go. Working with streams and pipes for UNIX like behavior utilizing Go channels. Processing streams line by line is slightly more complex than it needs to be as I'm playing with channels and state machines here.
 
 => https://gemini.circumlunar.space/docs/gemtext.gmi 1: gemtext
