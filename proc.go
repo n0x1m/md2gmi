@@ -10,28 +10,36 @@ import (
 
 func FormatLinks(in chan pipe.StreamItem) chan pipe.StreamItem {
 	out := make(chan pipe.StreamItem)
+
 	go func() {
 		fenceOn := false
+
 		for b := range in {
 			data := b.Payload()
 			if isFence(data) {
 				fenceOn = !fenceOn
 			}
+
 			if fenceOn {
 				out <- pipe.NewItem(b.Index(), b.Payload())
-			} else {
-				out <- pipe.NewItem(b.Index(), formatLinks(b.Payload()))
+
+				continue
 			}
+			out <- pipe.NewItem(b.Index(), formatLinks(b.Payload()))
 		}
+
 		close(out)
 	}()
+
 	return out
 }
 
 func formatLinks(data []byte) []byte {
 	// find link name and url
 	var buffer []byte
+
 	re := regexp.MustCompile(`!?\[([^\]*]*)\]\(([^)]*)\)`)
+
 	for i, match := range re.FindAllSubmatch(data, -1) {
 		replaceWithIndex := append(match[1], fmt.Sprintf("[%d]", i+1)...)
 		data = bytes.Replace(data, match[0], replaceWithIndex, 1)
@@ -50,43 +58,51 @@ func formatLinks(data []byte) []byte {
 
 func RemoveComments(in chan pipe.StreamItem) chan pipe.StreamItem {
 	out := make(chan pipe.StreamItem)
+
 	go func() {
 		re := regexp.MustCompile(`<!--.*-->`)
+
 		for b := range in {
 			data := b.Payload()
 			for _, match := range re.FindAllSubmatch(data, -1) {
 				data = bytes.Replace(data, match[0], []byte(""), 1)
 			}
 			out <- pipe.NewItem(b.Index(), append(bytes.TrimSpace(data), '\n'))
-			//out <- pipe.NewItem(b.Index(), data)
 		}
+
 		close(out)
 	}()
+
 	return out
 }
 
 func RemoveFrontMatter(in chan pipe.StreamItem) chan pipe.StreamItem {
 	out := make(chan pipe.StreamItem)
+
 	go func() {
 		re := regexp.MustCompile(`---.*---`)
+
 		for b := range in {
 			data := b.Payload()
 			for _, match := range re.FindAllSubmatch(data, -1) {
 				data = bytes.Replace(data, match[0], []byte(""), 1)
 			}
 			out <- pipe.NewItem(b.Index(), append(bytes.TrimSpace(data), '\n'))
-			//out <- pipe.NewItem(b.Index(), data)
 		}
+
 		close(out)
 	}()
+
 	return out
 }
 
 func FormatHeadings(in chan pipe.StreamItem) chan pipe.StreamItem {
 	out := make(chan pipe.StreamItem)
+
 	go func() {
 		re := regexp.MustCompile(`^[#]{4,}`)
 		re2 := regexp.MustCompile(`^(#+)[^# ]`)
+
 		for b := range in {
 			// fix up more than 4 levels
 			data := re.ReplaceAll(b.Payload(), []byte("###"))
@@ -101,9 +117,10 @@ func FormatHeadings(in chan pipe.StreamItem) chan pipe.StreamItem {
 			}
 			// writeback
 			out <- pipe.NewItem(b.Index(), data)
-
 		}
+
 		close(out)
 	}()
+
 	return out
 }

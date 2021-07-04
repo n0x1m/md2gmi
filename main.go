@@ -46,7 +46,7 @@ func reader(in string) (io.Reader, error) {
 	if in != "" {
 		file, err := os.Open(in)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("reader: %w", err)
 		}
 
 		return file, nil
@@ -59,7 +59,7 @@ func writer(out string) (io.Writer, error) {
 	if out != "" {
 		file, err := os.Create(out)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("writer: %w", err)
 		}
 
 		return file, nil
@@ -76,14 +76,17 @@ func source(r io.Reader) pipe.Source {
 	return func() chan pipe.StreamItem {
 		data := make(chan pipe.StreamItem)
 		s := bufio.NewScanner(r)
+
 		go func() {
 			i := 0
+
 			for s.Scan() {
 				data <- pipe.NewItem(i, s.Bytes())
-				i += 1
+				i++
 			}
 			close(data)
 		}()
+
 		return data
 	}
 }
@@ -115,11 +118,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	preproc := NewPreproc()
-
-	//sink.Input(preproc.Process(source.Output()))
 	s := pipe.New()
-	s.Use(preproc.Process)
+	s.Use(newPreproc().Process)
 	s.Use(RemoveFrontMatter)
 	s.Use(RemoveComments)
 	s.Use(FormatHeadings)

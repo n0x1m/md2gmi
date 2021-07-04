@@ -26,6 +26,7 @@ func chain(nodes []Pipeline, src Connector) Connector {
 	for i := 1; i < len(nodes); i++ {
 		c = nodes[i](c)
 	}
+
 	return c
 }
 

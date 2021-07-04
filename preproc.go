@@ -7,10 +7,10 @@ import (
 	"github.com/n0x1m/md2gmi/pipe"
 )
 
-// state function
+// state function.
 type stateFn func(*fsm, []byte) stateFn
 
-// state machine
+// state machine.
 type fsm struct {
 	state stateFn
 
@@ -24,12 +24,13 @@ type fsm struct {
 	pending []byte
 }
 
-func NewPreproc() *fsm {
+func newPreproc() *fsm {
 	return &fsm{}
 }
 
 func (m *fsm) Process(in chan pipe.StreamItem) chan pipe.StreamItem {
 	m.out = make(chan pipe.StreamItem)
+
 	go func() {
 		for m.state = normal; m.state != nil; {
 			b, ok := <-in
@@ -38,6 +39,7 @@ func (m *fsm) Process(in chan pipe.StreamItem) chan pipe.StreamItem {
 				m.sync()
 				close(m.out)
 				m.state = nil
+
 				continue
 			}
 
@@ -45,6 +47,7 @@ func (m *fsm) Process(in chan pipe.StreamItem) chan pipe.StreamItem {
 			m.sync()
 		}
 	}()
+
 	return m.out
 }
 
@@ -53,7 +56,7 @@ func (m *fsm) sync() {
 		m.sendBuffer = append(m.sendBuffer, '\n')
 		m.out <- pipe.NewItem(m.i, m.sendBuffer)
 		m.sendBuffer = m.sendBuffer[:0]
-		m.i += 1
+		m.i++
 	}
 }
 
@@ -84,6 +87,7 @@ func handleList(data []byte) ([]byte, bool) {
 	if len(sub) > 1 {
 		return bytes.Replace(data, sub[1], []byte("-"), 1), true
 	}
+
 	return data, false
 }
 
@@ -99,27 +103,34 @@ func normal(m *fsm, data []byte) stateFn {
 	if data, isList := handleList(data); isList {
 		m.blockBuffer = append(data, '\n')
 		m.blockFlush()
+
 		return normal
 	}
+
 	if isFence(data) {
 		m.blockBuffer = append(data, '\n')
+
 		return fence
 	}
+
 	if needsFence(data) {
 		m.blockBuffer = append(m.blockBuffer, []byte("```\n")...)
 		m.blockBuffer = append(m.blockBuffer, append(data[4:], '\n')...)
 		m.pending = []byte("```\n")
+
 		return toFence
 	}
+
 	if isTerminated(data) {
 		m.blockBuffer = append(m.blockBuffer, data...)
 		m.blockBuffer = append(m.blockBuffer, ' ')
+
 		return paragraph
 	}
-	// TODO
-	// collapse lists
+
 	m.blockBuffer = append(m.blockBuffer, append(data, '\n')...)
 	m.blockFlush()
+
 	return normal
 }
 
@@ -128,18 +139,23 @@ func fence(m *fsm, data []byte) stateFn {
 	// second fence returns to normal
 	if isFence(data) {
 		m.blockFlush()
+
 		return normal
 	}
+
 	return fence
 }
 
 func toFence(m *fsm, data []byte) stateFn {
 	if needsFence(data) {
 		m.blockBuffer = append(m.blockBuffer, append(data[4:], '\n')...)
+
 		return toFence
 	}
+
 	m.blockFlush()
 	m.blockBuffer = append(m.blockBuffer, append(data, '\n')...)
+
 	return normal
 }
 
@@ -149,9 +165,12 @@ func paragraph(m *fsm, data []byte) stateFn {
 		m.blockBuffer = bytes.TrimSpace(m.blockBuffer)
 		m.blockBuffer = append(m.blockBuffer, '\n')
 		m.blockFlush()
+
 		return normal
 	}
+
 	m.blockBuffer = append(m.blockBuffer, data...)
 	m.blockBuffer = append(m.blockBuffer, []byte(" ")...)
+
 	return paragraph
 }
