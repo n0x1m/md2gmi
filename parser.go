@@ -86,6 +86,7 @@ func normal(m *fsm, data []byte) stateFn {
 	}
 	if data[len(data)-1] != '.' {
 		m.buffer = append(m.buffer, data...)
+		m.buffer = append(m.buffer, []byte(" ")...)
 		return paragraph
 	}
 	// TODO
@@ -120,6 +121,7 @@ func paragraph(m *fsm, data []byte) stateFn {
 		return normal
 	}
 	m.buffer = append(m.buffer, data...)
+	m.buffer = append(m.buffer, []byte(" ")...)
 	return paragraph
 }
 
