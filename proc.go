@@ -6,11 +6,11 @@ import (
 	"regexp"
 )
 
-func FormatLinks(in chan []byte) chan []byte {
-	out := make(chan []byte)
+func FormatLinks(in chan WorkItem) chan WorkItem {
+	out := make(chan WorkItem)
 	go func() {
 		for b := range in {
-			out <- formatLinks(b)
+			out <- New(b.Index(), formatLinks(b.Payload()))
 		}
 		close(out)
 	}()
@@ -37,33 +37,42 @@ func formatLinks(data []byte) []byte {
 	return data
 }
 
-func RemoveComments(in chan []byte) chan []byte {
-	out := make(chan []byte)
+func RemoveComments(in chan WorkItem) chan WorkItem {
+	out := make(chan WorkItem)
 	go func() {
 		re := regexp.MustCompile(`<!--.*-->`)
 		for b := range in {
-			out <- re.ReplaceAll(b, []byte{})
+			data := b.Payload()
+			for _, match := range re.FindAllSubmatch(data, -1) {
+				data = bytes.Replace(data, match[0], []byte(""), 1)
+			}
+			out <- New(b.Index(), append(bytes.TrimSpace(data), '\n'))
+			//out <- New(b.Index(), data)
 		}
 		close(out)
 	}()
 	return out
 }
 
-func FormatHeadings(in chan []byte) chan []byte {
-	out := make(chan []byte)
+func FormatHeadings(in chan WorkItem) chan WorkItem {
+	out := make(chan WorkItem)
 	go func() {
 		re := regexp.MustCompile(`^[#]{4,}`)
 		re2 := regexp.MustCompile(`^(#+)[^# ]`)
 		for b := range in {
 			// fix up more than 4 levels
-			b = re.ReplaceAll(b, []byte("###"))
+			data := re.ReplaceAll(b.Payload(), []byte("###"))
 			// ensure we have a space
-			sub := re2.FindSubmatch(b)
+			sub := re2.FindSubmatch(data)
 			if len(sub) > 0 {
-				b = bytes.Replace(b, sub[1], append(sub[1], []byte(" ")...), 1)
+				data = bytes.Replace(data, sub[1], append(sub[1], []byte(" ")...), 1)
+			}
+			// generally if we deal with a heading, add an extra blank line
+			if bytes.HasPrefix(data, []byte("#")) {
+				data = append(data, '\n')
 			}
 			// writeback
-			out <- b
+			out <- New(b.Index(), data)
 
 		}
 		close(out)

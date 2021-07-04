@@ -2,16 +2,12 @@
 
 Convert Markdown to Gemini [gemtext](https://gemini.circumlunar.space/docs/gemtext.gmi) markup with
 Go. Working with streams and pipes for UNIX like behavior utilizing Go channels. Processing streams
-line by line is deliberately slightly more challenging than it needs to be to play around with go
-state machines.
+line by line is slightly more complex than it needs to be as I'm playing with channels and state
+machines here.
 
-<!-- testing markdown, this should be deleted, below merged -->
-See the [gemini
-protocol](https://gemini.circumlunar.space/) and the [protocol
-spec](https://gemini.circumlunar.space/docs/specification.gmi).
-
-Internally md2gmi does a 1st pass that constructs the core layout for gemtext. This is then streamed
-to the 2nd pass line by line. The 2nd pass will convert links and stream line by line to the output.
+Internally md2gmi does a 1st pass that constructs the blocks of single lines for gemtext. This is
+then streamed to the 2nd pass line by line. The 2nd pass will convert links, fix headings and stream
+line by line to the output sink. The sink is either a file or stdout.
 
 ### Usage
 
@@ -29,19 +25,31 @@ Usage of ./md2gmi:
     cat file.md | md2gmi
     md2gmi -in file.md -out file.gmi
 
-The top part of this readme parses to
+The top part of this readme parses from
 
 ```md
-## md2gmi
+Convert Markdown to Gemini [gemtext](https://gemini.circumlunar.space/docs/gemtext.gmi) markup with
+Go. Working with streams and pipes for UNIX like behavior utilizing Go channels. Processing streams
+line by line is slightly more complex than it needs to be as I'm playing with channels and state
+machines here.
 
-Convert Markdown to Gemini gemtext[1] markup with Go. Working with streams and pipes for UNIX like behavior utilizing Go channels. Processing streams line by line is deliberately slightly more challenging than it needs to be to play around with go state machines.
+> this is
+a quote
+
+<!-- testing markdown, this should be deleted, below merged -->
+See the [gemini
+protocol](https://gemini.circumlunar.space/) and the [protocol
+spec](https://gemini.circumlunar.space/docs/specification.gmi).
+```
+
+```md
+Convert Markdown to Gemini gemtext[1] markup with Go. Working with streams and pipes for UNIX like behavior utilizing Go channels. Processing streams line by line is slightly more complex than it needs to be as I'm playing with channels and state machines here.
 
 => https://gemini.circumlunar.space/docs/gemtext.gmi 1: gemtext
 
+> this is a quote
 See the gemini protocol[1] and the protocol spec[2].
 
 => https://gemini.circumlunar.space/ 1: gemini protocol
 => https://gemini.circumlunar.space/docs/specification.gmi 2: protocol spec
-
-Internally md2gmi does a 1st pass that constructs the core layout for gemtext. This is then streamed to the 2nd pass line by line. The 2nd pass will convert links and stream line by line to the output.
 ```

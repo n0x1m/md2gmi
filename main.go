@@ -2,11 +2,43 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/gob"
 	"flag"
 	"fmt"
 	"io"
 	"os"
 )
+
+type WorkItem struct {
+	index   int
+	payload []byte
+}
+
+func New(index int, payload []byte) WorkItem {
+	w := WorkItem{index: index}
+	var indexBuffer bytes.Buffer
+	encoder := gob.NewEncoder(&indexBuffer)
+	if err := encoder.Encode(payload); err != nil {
+		panic(err)
+	}
+	w.payload = indexBuffer.Bytes()
+	return w
+}
+
+func (w *WorkItem) Index() int {
+	return w.index
+}
+
+func (w *WorkItem) Payload() []byte {
+	buf := bytes.NewReader(w.payload)
+	decoder := gob.NewDecoder(buf)
+	var tmp []byte
+	if err := decoder.Decode(&tmp); err != nil {
+		panic(err)
+	}
+	return tmp
+}
 
 func reader(in string) (io.Reader, error) {
 	if in != "" {
@@ -46,12 +78,14 @@ func InputStream(r io.Reader) *ir {
 	return &ir{r: r}
 }
 
-func (m *ir) Output() chan []byte {
-	data := make(chan []byte)
+func (m *ir) Output() chan WorkItem {
+	data := make(chan WorkItem)
 	s := bufio.NewScanner(m.r)
 	go func() {
+		i := 0
 		for s.Scan() {
-			data <- s.Bytes()
+			data <- New(i, s.Bytes())
+			i += 1
 		}
 		close(data)
 	}()
@@ -66,9 +100,9 @@ func OutputStream(w io.Writer) *ow {
 	return &ow{w: w}
 }
 
-func (m *ow) Input(data chan []byte) {
+func (m *ow) Input(data chan WorkItem) {
 	for b := range data {
-		write(m.w, b)
+		write(m.w, b.Payload())
 	}
 }
 
@@ -97,9 +131,9 @@ func main() {
 
 	//sink.Input(preproc.Process(source.Output()))
 	sink.Input(
-		RemoveComments(
+		FormatLinks(
 			FormatHeadings(
-				FormatLinks(
+				RemoveComments(
 					preproc.Process(source.Output()),
 				),
 			),
