@@ -1,51 +1,43 @@
 package main
 
-import (
-	"fmt"
-	"io"
-)
-
 // state function
 type stateFn func(*fsm, []byte) stateFn
 
 // state machine
 type fsm struct {
-	state  stateFn
-	buffer []byte
-	out    io.Writer
-	quit   chan struct{}
-	data   <-chan []byte
+	state stateFn
+	out   chan []byte
 
-	// if we have a nested state, e.g. a link inside a paragraph
-	returnState stateFn
+	// combining multiple input lines
+	buffer []byte
 	// if we have a termination rule to abide, e.g. implied code fences
 	pending []byte
 }
 
-func NewParser(data <-chan []byte, writer io.Writer, quit chan struct{}) *fsm {
-	return &fsm{
-		out:  writer,
-		data: data,
-		quit: quit,
-	}
+func NewParser() *fsm {
+	return &fsm{}
 }
 
-func (m *fsm) Parse() {
-	var line []byte
-	for m.state = normal; m.state != nil; {
-		select {
-		case <-m.quit:
-			m.flush()
-			m.state = nil
-		case line = <-m.data:
-			m.state = m.state(m, line)
+func (m *fsm) Parse(in chan []byte) chan []byte {
+	m.out = make(chan []byte)
+	go func() {
+		for m.state = normal; m.state != nil; {
+			b, ok := <-in
+			if !ok {
+				m.flush()
+				close(m.out)
+				m.state = nil
+				continue
+			}
+			m.state = m.state(m, b)
 		}
-	}
+	}()
+	return m.out
 }
 
 func (m *fsm) flush() {
 	if len(m.pending) > 0 {
-		fmt.Fprintf(m.out, string(m.pending)+"\n")
+		m.out <- append(m.pending, '\n')
 		m.pending = m.pending[:0]
 	}
 }
@@ -74,21 +66,21 @@ func normal(m *fsm, data []byte) stateFn {
 	m.flush()
 	// blank line
 	if isBlank(data) {
-		fmt.Fprintf(m.out, "\n")
+		m.out <- []byte("\n")
 		return normal
 	}
 	// header
 	if isHeader(data) {
-		fmt.Fprintf(m.out, string(data)+"\n")
+		m.out <- append(data, '\n')
 		return normal
 	}
 	if isFence(data) {
-		fmt.Fprintf(m.out, string(data)+"\n")
+		m.out <- append(data, '\n')
 		return fence
 	}
 	if needsFence(data) {
-		fmt.Fprintf(m.out, string("```")+"\n")
-		fmt.Fprintf(m.out, string(data)+"\n")
+		m.out <- []byte("```\n")
+		m.out <- append(data, '\n')
 		m.pending = []byte("```")
 		return toFence
 	}
@@ -99,13 +91,13 @@ func normal(m *fsm, data []byte) stateFn {
 	// TODO
 	// find links
 	// collapse lists
-	fmt.Fprintf(m.out, string(data)+"\n")
+	m.out <- append(data, '\n')
 
 	return normal
 }
 
 func fence(m *fsm, data []byte) stateFn {
-	fmt.Fprintf(m.out, string(data)+"\n")
+	m.out <- append(data, '\n')
 	if isFence(data) {
 		return normal
 	}
@@ -113,18 +105,17 @@ func fence(m *fsm, data []byte) stateFn {
 }
 
 func toFence(m *fsm, data []byte) stateFn {
+	m.out <- append(data, '\n')
 	if needsFence(data) {
-		fmt.Fprintf(m.out, string(data)+"\n")
 		return toFence
 	}
-	fmt.Fprintf(m.out, string(data)+"\n")
 	return normal
 }
 
 func paragraph(m *fsm, data []byte) stateFn {
 	if triggerBreak(data) {
 		m.buffer = append(m.buffer, data...)
-		fmt.Fprintf(m.out, string(m.buffer)+"\n")
+		m.out <- append(m.buffer, '\n')
 		m.buffer = m.buffer[:0]
 		return normal
 	}

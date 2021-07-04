@@ -35,16 +35,15 @@ func writer(out string) (io.Writer, error) {
 }
 
 func write(w io.Writer, b []byte) {
-	fmt.Fprintf(w, string(b))
+	fmt.Fprint(w, string(b))
 }
 
 type ir struct {
-	r    io.Reader
-	quit chan struct{}
+	r io.Reader
 }
 
-func NewIr(r io.Reader, quit chan struct{}) *ir {
-	return &ir{r: r, quit: quit}
+func NewIr(r io.Reader) *ir {
+	return &ir{r: r}
 }
 
 func (m *ir) Output() chan []byte {
@@ -54,28 +53,22 @@ func (m *ir) Output() chan []byte {
 		for s.Scan() {
 			data <- s.Bytes()
 		}
-		close(m.quit)
+		close(data)
 	}()
 	return data
 }
 
 type ow struct {
-	w    io.Writer
-	quit chan struct{}
+	w io.Writer
 }
 
-func NewOw(w io.Writer, quit chan struct{}) *ow {
-	return &ow{w: w, quit: quit}
+func NewOw(w io.Writer) *ow {
+	return &ow{w: w}
 }
 
 func (m *ow) Input(data chan []byte) {
-	for {
-		select {
-		case <-m.quit:
-			return
-		case b := <-data:
-			write(m.w, b)
-		}
+	for b := range data {
+		write(m.w, b)
 	}
 }
 
@@ -85,8 +78,6 @@ func main() {
 	flag.StringVar(&in, "in", "", "specify a .md (Markdown) file to read from, otherwise stdin (default)")
 	flag.StringVar(&out, "out", "", "specify a .gmi (gemtext) file to write to, otherwise stdout (default)")
 	flag.Parse()
-
-	quit := make(chan struct{})
 
 	r, err := reader(in)
 	if err != nil {
@@ -100,10 +91,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	source := NewIr(r, quit)
-	sink := NewOw(w, quit)
+	source := NewIr(r)
+	sink := NewOw(w)
+	preproc := NewParser()
 
-	sink.Input(source.Output())
-
-	//NewParser(data, w, quit).Parse()
+	sink.Input(preproc.Parse(source.Output()))
 }
