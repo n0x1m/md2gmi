@@ -29,7 +29,7 @@ func (m *proc) Process(in chan []byte) chan []byte {
 func (m *proc) process(data []byte) []byte {
 	// find link name and url
 	var buffer []byte
-	re := regexp.MustCompile(`\[([^\]*]*)\]\(([^)]*)\)`)
+	re := regexp.MustCompile(`!?\[([^\]*]*)\]\(([^)]*)\)`)
 	for i, match := range re.FindAllSubmatch(data, -1) {
 		replaceWithIndex := append(match[1], fmt.Sprintf("[%d]", i+1)...)
 		data = bytes.Replace(data, match[0], replaceWithIndex, 1)
