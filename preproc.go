@@ -14,11 +14,11 @@ type fsm struct {
 	pending []byte
 }
 
-func NewParser() *fsm {
+func NewPreproc() *fsm {
 	return &fsm{}
 }
 
-func (m *fsm) Parse(in chan []byte) chan []byte {
+func (m *fsm) Process(in chan []byte) chan []byte {
 	m.out = make(chan []byte)
 	go func() {
 		for m.state = normal; m.state != nil; {
@@ -90,7 +90,6 @@ func normal(m *fsm, data []byte) stateFn {
 		return paragraph
 	}
 	// TODO
-	// find links
 	// collapse lists
 	m.out <- append(data, '\n')
 
@@ -123,9 +122,4 @@ func paragraph(m *fsm, data []byte) stateFn {
 	m.buffer = append(m.buffer, data...)
 	m.buffer = append(m.buffer, []byte(" ")...)
 	return paragraph
-}
-
-func link(m *fsm, data []byte) stateFn {
-
-	return link
 }

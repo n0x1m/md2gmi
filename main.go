@@ -23,7 +23,7 @@ func reader(in string) (io.Reader, error) {
 
 func writer(out string) (io.Writer, error) {
 	if out != "" {
-		file, err := os.Open(out)
+		file, err := os.Create(out)
 		if err != nil {
 			return nil, err
 		}
@@ -42,7 +42,7 @@ type ir struct {
 	r io.Reader
 }
 
-func NewIr(r io.Reader) *ir {
+func InputStream(r io.Reader) *ir {
 	return &ir{r: r}
 }
 
@@ -62,7 +62,7 @@ type ow struct {
 	w io.Writer
 }
 
-func NewOw(w io.Writer) *ow {
+func OutputStream(w io.Writer) *ow {
 	return &ow{w: w}
 }
 
@@ -75,8 +75,8 @@ func (m *ow) Input(data chan []byte) {
 func main() {
 	var in, out string
 
-	flag.StringVar(&in, "in", "", "specify a .md (Markdown) file to read from, otherwise stdin (default)")
-	flag.StringVar(&out, "out", "", "specify a .gmi (gemtext) file to write to, otherwise stdout (default)")
+	flag.StringVar(&in, "f", "", "specify a .md (Markdown) file to read from, otherwise stdin (default)")
+	flag.StringVar(&out, "o", "", "specify a .gmi (gemtext) file to write to, otherwise stdout (default)")
 	flag.Parse()
 
 	r, err := reader(in)
@@ -91,9 +91,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	source := NewIr(r)
-	sink := NewOw(w)
-	preproc := NewParser()
+	source := InputStream(r)
+	sink := OutputStream(w)
+	preproc := NewPreproc()
+	proc := NewProc()
 
-	sink.Input(preproc.Parse(source.Output()))
+	//sink.Input(preproc.Process(source.Output()))
+	sink.Input(proc.Process(preproc.Process(source.Output())))
 }
