@@ -80,7 +80,7 @@ func normal(m *fsm, data []byte) stateFn {
 	}
 	if needsFence(data) {
 		m.out <- []byte("```\n")
-		m.out <- append(data, '\n')
+		m.out <- append(data[4:], '\n')
 		m.pending = []byte("```")
 		return toFence
 	}
@@ -105,7 +105,7 @@ func fence(m *fsm, data []byte) stateFn {
 }
 
 func toFence(m *fsm, data []byte) stateFn {
-	m.out <- append(data, '\n')
+	m.out <- append(data[4:], '\n')
 	if needsFence(data) {
 		return toFence
 	}

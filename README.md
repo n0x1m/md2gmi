@@ -7,18 +7,19 @@ state machines.
 
 <!-- testing markdown, this should be deleted, below merged -->
 See the [gemini
-protocol](https://gemini.circumlunar.space/).
+protocol](https://gemini.circumlunar.space/) and the [protocol
+spec](https://gemini.circumlunar.space/docs/specification.gmi).
 
 Internally md2gmi does a 1st pass that constructs the core layout for gemtext. This is then streamed
 to the 2nd pass line by line. The 2nd pass will convert links and stream line by line to the output.
 
-### Usage
+###Usage
 
 ```plain
 Usage of ./md2gmi:
-  -in string
+  -f string
         specify a .md (Markdown) file to read from, otherwise stdin (default)
-  -out string
+  -o string
         specify a .gmi (gemtext) file to write to, otherwise stdout (default)
 ```
 

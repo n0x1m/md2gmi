@@ -1,17 +1,14 @@
 package main
 
-// state function
-type stateFn2 func(*proc, []byte) stateFn2
+import (
+	"bytes"
+	"fmt"
+	"regexp"
+)
 
 // state machine
 type proc struct {
-	state stateFn2
-	out   chan []byte
-
-	// combining multiple input lines
-	buffer []byte
-	// if we have a termination rule to abide, e.g. implied code fences
-	pending []byte
+	out chan []byte
 }
 
 func NewProc() *proc {
@@ -21,32 +18,43 @@ func NewProc() *proc {
 func (m *proc) Process(in chan []byte) chan []byte {
 	m.out = make(chan []byte)
 	go func() {
-		for m.state = line; m.state != nil; {
-			b, ok := <-in
-			if !ok {
-				m.flush()
-				close(m.out)
-				m.state = nil
-				continue
-			}
-			m.state = m.state(m, b)
+		for b := range in {
+			m.out <- m.process(b)
 		}
+		close(m.out)
 	}()
 	return m.out
 }
 
-func (m *proc) flush() {
-	if len(m.pending) > 0 {
-		m.out <- append(m.pending, '\n')
-		m.pending = m.pending[:0]
+func (m *proc) process(data []byte) []byte {
+	// find link name and url
+	var buffer []byte
+	re := regexp.MustCompile(`\[([^\]*]*)\]\(([^)]*)\)`)
+	for i, match := range re.FindAllSubmatch(data, -1) {
+		replaceWithIndex := append(match[1], fmt.Sprintf("[%d]", i+1)...)
+		data = bytes.Replace(data, match[0], replaceWithIndex, 1)
+		link := fmt.Sprintf("=> %s %d: %s\n", match[2], i+1, match[1])
+		buffer = append(buffer, link...)
 	}
-}
+	if len(buffer) > 0 {
+		data = append(data, []byte("\n")...)
+		data = append(data, buffer...)
+	}
 
-func line(m *proc, data []byte) stateFn2 {
-	// TODO
-	// find links
-	// collapse lists
-	m.out <- data
+	// remove comments
+	re2 := regexp.MustCompile(`<!--.*-->`)
+	data = re2.ReplaceAll(data, []byte{})
 
-	return line
+	// collapse headings
+	re3 := regexp.MustCompile(`^[#]{4,}`)
+	data = re3.ReplaceAll(data, []byte("###"))
+
+	// heading without spacing
+	re4 := regexp.MustCompile(`^(#+)[^# ]`)
+	sub := re4.FindSubmatch(data)
+	if len(sub) > 0 {
+		data = bytes.Replace(data, sub[1], append(sub[1], []byte(" ")...), 1)
+	}
+
+	return data
 }
