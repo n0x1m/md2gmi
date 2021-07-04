@@ -38,7 +38,7 @@ Convert Markdown to Gemini gemtext[1] markup with Go. Working with streams and p
 
 => https://gemini.circumlunar.space/docs/gemtext.gmi 1: gemtext
 
- See the gemini protocol[1] and the protocol spec[2].
+See the gemini protocol[1] and the protocol spec[2].
 
 => https://gemini.circumlunar.space/ 1: gemini protocol
 => https://gemini.circumlunar.space/docs/specification.gmi 2: protocol spec

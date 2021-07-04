@@ -94,8 +94,15 @@ func main() {
 	source := InputStream(r)
 	sink := OutputStream(w)
 	preproc := NewPreproc()
-	proc := NewProc()
 
 	//sink.Input(preproc.Process(source.Output()))
-	sink.Input(proc.Process(preproc.Process(source.Output())))
+	sink.Input(
+		RemoveComments(
+			FormatHeadings(
+				FormatLinks(
+					preproc.Process(source.Output()),
+				),
+			),
+		),
+	)
 }
