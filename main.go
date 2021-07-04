@@ -45,13 +45,40 @@ func writer(out string) (io.Writer, error) {
 	return os.Stdout, nil
 }
 
-func write(out string, data <-chan []byte, quit chan struct{}) error {
+func write(w io.Writer, b []byte) {
+	fmt.Fprintf(w, string(b))
+}
+
+type ow struct {
+	w    io.Writer
+	quit chan struct{}
+}
+
+func NewOw(w io.Writer, quit chan struct{}) *ow {
+	return &ow{w: w, quit: quit}
+}
+
+func (m *ow) Input(data <-chan []byte) {
+	for {
+		select {
+		case <-m.quit:
+			return
+		case b := <-data:
+			write(m.w, b)
+		}
+	}
+}
+
+func writesetup(out string, data <-chan []byte, quit chan struct{}) error {
 	w, err := writer(out)
 	if err != nil {
 		return fmt.Errorf("writer: %w", err)
 	}
 
-	NewParser(data, w, quit).Parse()
+	sink := NewOw(w, quit)
+	sink.Input(data)
+
+	//NewParser(data, w, quit).Parse()
 
 	return nil
 }
@@ -73,7 +100,7 @@ func main() {
 		close(quit)
 	}()
 
-	if err := write(out, data, quit); err != nil {
+	if err := writesetup(out, data, quit); err != nil {
 		fmt.Fprintf(os.Stderr, err.Error())
 	}
 }

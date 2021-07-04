@@ -16,6 +16,9 @@ type fsm struct {
 	quit   chan struct{}
 	data   <-chan []byte
 
+	// if we have a nested state, e.g. a link inside a paragraph
+	returnState stateFn
+	// if we have a termination rule to abide, e.g. implied code fences
 	pending []byte
 }
 
@@ -127,4 +130,9 @@ func paragraph(m *fsm, data []byte) stateFn {
 	}
 	m.buffer = append(m.buffer, data...)
 	return paragraph
+}
+
+func link(m *fsm, data []byte) stateFn {
+
+	return link
 }
