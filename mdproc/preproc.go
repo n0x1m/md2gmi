@@ -81,7 +81,7 @@ func isTerminated(data []byte) bool {
 }
 
 func handleList(data []byte) ([]byte, bool) {
-	re := regexp.MustCompile(`^([ ]*[-*^]{1,1})[^*-]`)
+	re := regexp.MustCompile(`^([ \t]*[-*^]{1,1})[^*-]`)
 	sub := re.FindSubmatch(data)
 	// if lists, collapse to single level
 	if len(sub) > 1 {
@@ -100,14 +100,15 @@ func needsFence(data []byte) bool {
 }
 
 func normal(m *fsm, data []byte) stateFn {
-	if len(data) == 0 {
+	if len(bytes.TrimSpace(data)) == 0 {
 		return normal
 	}
 	if data, isList := handleList(data); isList {
-		m.blockBuffer = append(data, '\n')
+		//m.blockBuffer = append(data, '\n')
+		m.blockBuffer = append(m.blockBuffer, data...)
 		m.blockFlush()
 
-		return normal
+		return list
 	}
 
 	if isFence(data) {
@@ -129,6 +130,20 @@ func normal(m *fsm, data []byte) stateFn {
 		m.blockBuffer = append(m.blockBuffer, ' ')
 
 		return paragraph
+	}
+
+	m.blockBuffer = append(m.blockBuffer, append(data, '\n')...)
+	m.blockFlush()
+
+	return normal
+}
+
+func list(m *fsm, data []byte) stateFn {
+	if data, isList := handleList(data); isList {
+		m.blockBuffer = append(m.blockBuffer, data...)
+		m.blockFlush()
+
+		return list
 	}
 
 	m.blockBuffer = append(m.blockBuffer, append(data, '\n')...)

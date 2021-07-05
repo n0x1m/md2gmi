@@ -20,6 +20,11 @@ comment -->
 > this is
 a quote
 
+ - this
+	- is
+* an unordered
+  * list
+
 This is
 a paragraph with a link to the [gemini protocol](https://en.wikipedia.org/wiki/Gemini_(protocol)).
 
@@ -37,6 +42,12 @@ and
 <!-- a comment -->
 
 > this is a quote
+
+- this
+- is
+- an unordered
+- list
+
 
 This is a paragraph with a link to the [gemini protocol](https://en.wikipedia.org/wiki/Gemini_(protocol)).
 
@@ -56,6 +67,12 @@ this is code too
 	gmi = `# This is the Title!
 
 > this is a quote
+
+- this
+- is
+- an unordered
+- list
+
 
 This is a paragraph with a link to the gemini protocol[1].
 
