@@ -13,7 +13,7 @@ line by line to the output sink. The sink is either a file or stdout.
 
 ```plain
 Usage of ./md2gmi:
-  -f string
+  -i string
         specify a .md (Markdown) file to read from, otherwise stdin (default)
   -o string
         specify a .gmi (gemtext) file to write to, otherwise stdout (default)
