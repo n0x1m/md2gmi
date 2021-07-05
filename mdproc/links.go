@@ -38,7 +38,7 @@ func formatLinks(data []byte) []byte {
 	// find link name and url
 	var buffer []byte
 
-	re := regexp.MustCompile(`!?\[([^\]*]*)\]\(([^)]*)\)`)
+	re := regexp.MustCompile(`!?\[([^\]*]*)\]\(([^ ]*)\)`)
 
 	for i, match := range re.FindAllSubmatch(data, -1) {
 		replaceWithIndex := append(match[1], fmt.Sprintf("[%d]", i+1)...)
@@ -49,8 +49,8 @@ func formatLinks(data []byte) []byte {
 	}
 	// append links to that paragraph
 	if len(buffer) > 0 {
-		data = append(data, []byte("\n")...)
 		data = append(data, buffer...)
+		data = append(data, []byte("\n")...)
 	}
 
 	return data

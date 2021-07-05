@@ -65,6 +65,7 @@ func (m *fsm) blockFlush() {
 	m.sendBuffer = append(m.sendBuffer, m.blockBuffer...)
 	m.blockBuffer = m.blockBuffer[:0]
 
+	// pending to sendbuffer too
 	if len(m.pending) > 0 {
 		m.sendBuffer = append(m.sendBuffer, m.pending...)
 		m.pending = m.pending[:0]
@@ -165,6 +166,7 @@ func paragraph(m *fsm, data []byte) stateFn {
 	if triggerBreak(data) {
 		m.blockBuffer = append(m.blockBuffer, data...)
 		m.blockBuffer = bytes.TrimSpace(m.blockBuffer)
+		// TODO, remove double spaces inside paragraphs
 		m.blockBuffer = append(m.blockBuffer, '\n')
 		m.blockFlush()
 
