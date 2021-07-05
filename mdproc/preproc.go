@@ -67,7 +67,6 @@ func (m *fsm) blockFlush() {
 
 	if len(m.pending) > 0 {
 		m.sendBuffer = append(m.sendBuffer, m.pending...)
-		m.sendBuffer = append(m.sendBuffer, '\n')
 		m.pending = m.pending[:0]
 	}
 }
@@ -100,6 +99,9 @@ func needsFence(data []byte) bool {
 }
 
 func normal(m *fsm, data []byte) stateFn {
+	if len(data) == 0 {
+		return normal
+	}
 	if data, isList := handleList(data); isList {
 		m.blockBuffer = append(data, '\n')
 		m.blockFlush()

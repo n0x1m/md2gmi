@@ -22,11 +22,12 @@ func RemoveFrontMatter(in chan pipe.StreamItem) chan pipe.StreamItem {
 			for _, match := range re.FindAllSubmatch(data, -1) {
 				data = bytes.Replace(data, match[0], []byte(""), 1)
 				for _, title := range re2.FindAllSubmatch(match[0], 1) {
-					// prefix title
-					data = append([]byte(fmt.Sprintf("# %s\n\n", title[1])), data...)
+					// add title
+					data = []byte(fmt.Sprintf("# %s\n\n", title[1]))
 				}
 			}
-			out <- pipe.NewItem(b.Index(), append(bytes.TrimSpace(data), '\n'))
+			//out <- pipe.NewItem(b.Index(), append(bytes.TrimSpace(data), '\n'))
+			out <- pipe.NewItem(b.Index(), data)
 		}
 
 		close(out)
