@@ -92,12 +92,15 @@ this is code too
 `
 )
 
-func source(in string) func() chan pipe.StreamItem {
+func source(t *testing.T, in string) func() chan pipe.StreamItem {
+	t.Helper()
+
 	return func() chan pipe.StreamItem {
 		data := make(chan pipe.StreamItem, len(strings.Split(in, "\n")))
 		for _, line := range strings.Split(in, "\n") {
 			data <- pipe.NewItem(0, []byte(line))
 		}
+
 		close(data)
 
 		return data
@@ -105,11 +108,14 @@ func source(in string) func() chan pipe.StreamItem {
 }
 
 func sink(t *testing.T, expected string) func(dest chan pipe.StreamItem) {
+	t.Helper()
+
 	return func(dest chan pipe.StreamItem) {
 		var data []byte
 		for in := range dest {
 			data = append(data, in.Payload()...)
 		}
+
 		if string(data) != expected {
 			t.Errorf("mismatch, expected '%s' but was '%s'", expected, data)
 		}
@@ -117,17 +123,21 @@ func sink(t *testing.T, expected string) func(dest chan pipe.StreamItem) {
 }
 
 func TestPreproc(t *testing.T) {
+	t.Parallel()
+
 	s := pipe.New()
 	s.Use(mdproc.Preproc())
-	s.Handle(source(input), sink(t, preproc))
+	s.Handle(source(t, input), sink(t, preproc))
 }
 
 func TestMd2Gmi(t *testing.T) {
+	t.Parallel()
+
 	s := pipe.New()
 	s.Use(mdproc.Preproc())
 	s.Use(mdproc.RemoveFrontMatter)
 	s.Use(mdproc.RemoveComments)
 	s.Use(mdproc.FormatHeadings)
 	s.Use(mdproc.FormatLinks)
-	s.Handle(source(input), sink(t, gmi))
+	s.Handle(source(t, input), sink(t, gmi))
 }

@@ -19,26 +19,26 @@ func (s *StreamItem) Context() context.Context {
 func NewItem(index int, payload []byte) StreamItem {
 	var buf bytes.Buffer
 
-	w := StreamItem{index: index}
+	s := StreamItem{index: index}
 
 	if err := gob.NewEncoder(&buf).Encode(payload); err != nil {
 		// assert no broken pipes
 		panic(err)
 	}
 
-	w.payload = buf.Bytes()
+	s.payload = buf.Bytes()
 
-	return w
+	return s
 }
 
-func (w *StreamItem) Index() int {
-	return w.index
+func (s *StreamItem) Index() int {
+	return s.index
 }
 
-func (w *StreamItem) Payload() []byte {
+func (s *StreamItem) Payload() []byte {
 	var dec []byte
 
-	buf := bytes.NewReader(w.payload)
+	buf := bytes.NewReader(s.payload)
 
 	if err := gob.NewDecoder(buf).Decode(&dec); err != nil {
 		// assert no broken pipes

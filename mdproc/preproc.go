@@ -103,8 +103,8 @@ func normal(m *fsm, data []byte) stateFn {
 	if len(bytes.TrimSpace(data)) == 0 {
 		return normal
 	}
+
 	if data, isList := handleList(data); isList {
-		//m.blockBuffer = append(data, '\n')
 		m.blockBuffer = append(m.blockBuffer, data...)
 		m.blockFlush()
 
