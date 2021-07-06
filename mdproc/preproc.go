@@ -99,7 +99,7 @@ func needsFence(data []byte) bool {
 	return len(data) >= 4 && string(data[0:4]) == "    "
 }
 
-func normal(m *fsm, data []byte) stateFn {
+func normalText(m *fsm, data []byte) stateFn {
 	if len(bytes.TrimSpace(data)) == 0 {
 		return normal
 	}
@@ -134,22 +134,24 @@ func normal(m *fsm, data []byte) stateFn {
 
 	m.blockBuffer = append(m.blockBuffer, append(data, '\n')...)
 	m.blockFlush()
-
 	return normal
+}
+
+func normal(m *fsm, data []byte) stateFn {
+	return normalText(m, data)
 }
 
 func list(m *fsm, data []byte) stateFn {
 	if data, isList := handleList(data); isList {
+		data = append(data, '\n')
 		m.blockBuffer = append(m.blockBuffer, data...)
-		m.blockFlush()
 
 		return list
 	}
 
-	m.blockBuffer = append(m.blockBuffer, append(data, '\n')...)
 	m.blockFlush()
 
-	return normal
+	return normalText(m, data)
 }
 
 func fence(m *fsm, data []byte) stateFn {
@@ -172,9 +174,8 @@ func toFence(m *fsm, data []byte) stateFn {
 	}
 
 	m.blockFlush()
-	m.blockBuffer = append(m.blockBuffer, append(data, '\n')...)
 
-	return normal
+	return normalText(m, data)
 }
 
 func paragraph(m *fsm, data []byte) stateFn {

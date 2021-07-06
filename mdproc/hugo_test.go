@@ -48,7 +48,6 @@ and
 - an unordered
 - list
 
-
 This is a paragraph with a link to the [gemini protocol](https://en.wikipedia.org/wiki/Gemini_(protocol)).
 
 ` + "```" + `
@@ -72,7 +71,6 @@ this is code too
 - is
 - an unordered
 - list
-
 
 This is a paragraph with a link to the gemini protocol[1].
 
