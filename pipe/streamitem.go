@@ -1,9 +1,7 @@
 package pipe
 
 import (
-	"bytes"
 	"context"
-	"encoding/gob"
 )
 
 type StreamItem struct {
@@ -17,17 +15,20 @@ func (s *StreamItem) Context() context.Context {
 }
 
 func NewItem(index int, payload []byte) StreamItem {
-	var buf bytes.Buffer
+	return newItem(context.Background(), index, payload)
+}
 
-	s := StreamItem{index: index}
+func NewItemWithContext(ctx context.Context, index int, payload []byte) StreamItem {
+	return newItem(ctx, index, payload)
+}
 
-	if err := gob.NewEncoder(&buf).Encode(payload); err != nil {
-		// assert no broken pipes
-		panic(err)
+func newItem(ctx context.Context, index int, payload []byte) StreamItem {
+	s := StreamItem{
+		ctx:     ctx,
+		index:   index,
+		payload: make([]byte, len(payload)),
 	}
-
-	s.payload = buf.Bytes()
-
+	copy(s.payload, payload)
 	return s
 }
 
@@ -36,14 +37,5 @@ func (s *StreamItem) Index() int {
 }
 
 func (s *StreamItem) Payload() []byte {
-	var dec []byte
-
-	buf := bytes.NewReader(s.payload)
-
-	if err := gob.NewDecoder(buf).Decode(&dec); err != nil {
-		// assert no broken pipes
-		panic(err)
-	}
-
-	return dec
+	return s.payload
 }
