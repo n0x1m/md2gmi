@@ -168,7 +168,8 @@ func fence(m *fsm, data []byte) stateFn {
 
 func toFence(m *fsm, data []byte) stateFn {
 	if needsFence(data) {
-		m.blockBuffer = append(m.blockBuffer, append(data[4:], '\n')...)
+		data = append(data, '\n')
+		m.blockBuffer = append(m.blockBuffer, data[4:]...)
 
 		return toFence
 	}

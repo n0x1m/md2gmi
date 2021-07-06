@@ -22,10 +22,6 @@ func FormatHeadings(in chan pipe.StreamItem) chan pipe.StreamItem {
 			if len(sub) > 0 {
 				data = bytes.Replace(data, sub[1], append(sub[1], []byte(" ")...), 1)
 			}
-			// generally if we deal with a heading, add an extra blank line
-			if bytes.HasPrefix(data, []byte("#")) {
-				data = append(data, '\n')
-			}
 			// writeback
 			out <- pipe.NewItem(b.Index(), data)
 		}
