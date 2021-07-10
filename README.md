@@ -1,4 +1,4 @@
-## md2gmi
+# md2gmi
 
 Convert Markdown to Gemini [gemtext](https://gemini.circumlunar.space/docs/gemtext.gmi) markup with
 Go. Working with streams and pipes for UNIX like behavior utilizing Go channels. Processing streams
@@ -10,7 +10,7 @@ multiple lines of an input stream. These blocks are then streamed to the 2nd pas
 will convert hugo front matters, links, fix headings etc. These stages/passes can be composed and
 chained with go pipelines. The output sink is either a file or stdout.
 
-### Usage
+## Usage
 
 ```plain
 Usage of ./md2gmi:
