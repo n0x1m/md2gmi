@@ -18,8 +18,9 @@ type fsm struct {
 	out chan pipe.StreamItem
 
 	// combining multiple input lines
-	blockBuffer []byte
-	sendBuffer  []byte
+	multiLineBlockMode bool
+	blockBuffer        []byte
+	sendBuffer         []byte
 	// if we have a termination rule to abide, e.g. implied code fences
 	pending []byte
 }
@@ -43,12 +44,22 @@ func (m *fsm) pipeline(in chan pipe.StreamItem) chan pipe.StreamItem {
 				continue
 			}
 
-			m.state = m.state(m, b.Payload())
+			m.state = m.state(wrap(m, b.Payload()))
 			m.sync()
 		}
 	}()
 
 	return m.out
+}
+
+func wrap(m *fsm, data []byte) (*fsm, []byte) {
+	if hasCommentStart(data) {
+		m.multiLineBlockMode = true
+	}
+	if hasCommentEnd(data) {
+		m.multiLineBlockMode = false
+	}
+	return m, data
 }
 
 func (m *fsm) sync() {
@@ -58,6 +69,13 @@ func (m *fsm) sync() {
 		m.sendBuffer = m.sendBuffer[:0]
 		m.i++
 	}
+}
+
+func (m *fsm) softBlockFlush() {
+	if m.multiLineBlockMode {
+		return
+	}
+	m.blockFlush()
 }
 
 func (m *fsm) blockFlush() {
@@ -114,6 +132,14 @@ func needsFence(data []byte) bool {
 	return len(data) >= 4 && string(data[0:4]) == "    "
 }
 
+func hasCommentStart(data []byte) bool {
+	return bytes.Contains(data, []byte("<!--"))
+}
+
+func hasCommentEnd(data []byte) bool {
+	return bytes.Contains(data, []byte("-->"))
+}
+
 func normalText(m *fsm, data []byte) stateFn {
 	if len(bytes.TrimSpace(data)) == 0 {
 		return normal
@@ -121,7 +147,7 @@ func normalText(m *fsm, data []byte) stateFn {
 
 	if data, isList := handleList(data); isList {
 		m.blockBuffer = append(m.blockBuffer, data...)
-		m.blockFlush()
+		m.softBlockFlush()
 
 		return list
 	}
@@ -148,7 +174,7 @@ func normalText(m *fsm, data []byte) stateFn {
 	}
 
 	m.blockBuffer = append(m.blockBuffer, append(data, '\n')...)
-	m.blockFlush()
+	m.softBlockFlush()
 	return normal
 }
 
@@ -164,7 +190,7 @@ func list(m *fsm, data []byte) stateFn {
 		return list
 	}
 
-	m.blockFlush()
+	m.softBlockFlush()
 
 	return normalText(m, data)
 }
@@ -173,7 +199,7 @@ func fence(m *fsm, data []byte) stateFn {
 	m.blockBuffer = append(m.blockBuffer, append(data, '\n')...)
 	// second fence returns to normal
 	if isFence(data) {
-		m.blockFlush()
+		m.softBlockFlush()
 
 		return normal
 	}
@@ -189,7 +215,7 @@ func toFence(m *fsm, data []byte) stateFn {
 		return toFence
 	}
 
-	m.blockFlush()
+	m.softBlockFlush()
 
 	return normalText(m, data)
 }
@@ -200,7 +226,7 @@ func paragraph(m *fsm, data []byte) stateFn {
 		m.blockBuffer = bytes.TrimSpace(m.blockBuffer)
 		// TODO, remove double spaces inside paragraphs
 		m.blockBuffer = append(m.blockBuffer, '\n')
-		m.blockFlush()
+		m.softBlockFlush()
 
 		return normal
 	}

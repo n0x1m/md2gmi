@@ -17,6 +17,13 @@ categories: [a,b]
 <!-- a
 comment -->
 
+<!--
+multi line comment block, terminated.
+
+With a break line,
+and [with a](link);
+-->
+
 > this is
 a quote
 
@@ -37,13 +44,17 @@ this is multi
 line code
 ` + "```" + `
 
-and
+and<!-- inline comment-->
 
     this is code too`
 
 	preproc = `--- title: "This is the Title!" categories: [a,b] ---
 
 <!-- a comment -->
+
+<!-- multi line comment block, terminated.
+With a break line, and [with a](link);
+-->
 
 > this is a quote
 
@@ -63,7 +74,7 @@ this is multi
 line code
 ` + "```" + `
 
-and
+and<!-- inline comment-->
 
 ` + "```" + `
 this is code too
