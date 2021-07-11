@@ -12,19 +12,17 @@ func FormatLinks(in chan pipe.StreamItem) chan pipe.StreamItem {
 	out := make(chan pipe.StreamItem)
 
 	go func() {
-		fenceOn := false
 
 		for b := range in {
 			data := b.Payload()
-			if isFence(data) {
-				fenceOn = !fenceOn
-			}
 
-			if fenceOn {
+			// we will receive the entire block as one when fences are on.
+			if hasFence(data) {
 				out <- pipe.NewItem(b.Index(), b.Payload())
 
 				continue
 			}
+
 			out <- pipe.NewItem(b.Index(), formatLinks(b.Payload()))
 		}
 
