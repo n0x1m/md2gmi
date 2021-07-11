@@ -11,7 +11,7 @@ func RemoveComments(in chan pipe.StreamItem) chan pipe.StreamItem {
 	out := make(chan pipe.StreamItem)
 
 	go func() {
-		re := regexp.MustCompile(`<!--.*-->`)
+		re := regexp.MustCompile(`(?s)<!--(.*?)-->`)
 
 		for b := range in {
 			data := b.Payload()
