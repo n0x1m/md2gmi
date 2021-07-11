@@ -24,7 +24,7 @@ type fsm struct {
 	pending []byte
 }
 
-func Preproc() pipe.Pipeline {
+func Preprocessor() pipe.Pipeline {
 	return (&fsm{}).pipeline
 }
 
@@ -72,19 +72,34 @@ func (m *fsm) blockFlush() {
 	}
 }
 
-func triggerBreak(data []byte) bool {
-	return len(data) == 0 || data[len(data)-1] == '.'
-}
-
 func isTerminated(data []byte) bool {
 	return len(data) > 0 && data[len(data)-1] != '.'
 }
 
+func triggerBreak(data []byte) bool {
+	if len(data) == 0 || len(data) == 1 && data[0] == '\n' {
+		return true
+	}
+	switch data[len(data)-1] {
+	case '.':
+		fallthrough
+	case ';':
+		fallthrough
+	case ':':
+		return true
+	}
+	return false
+}
+
 func handleList(data []byte) ([]byte, bool) {
-	re := regexp.MustCompile(`^([ \t]*[-*^]{1,1})[^*-]`)
-	sub := re.FindSubmatch(data)
+	// match italic, bold
+	nolist := regexp.MustCompile(`[\*_](.*)[\*_]`)
+	nosub := nolist.FindSubmatch(data)
+	// match lists
+	list := regexp.MustCompile(`^([ \t]*[-*^]{1,1})[^*-]`)
+	sub := list.FindSubmatch(data)
 	// if lists, collapse to single level
-	if len(sub) > 1 {
+	if len(sub) > 1 && len(nosub) <= 1 {
 		return bytes.Replace(data, sub[1], []byte("-"), 1), true
 	}
 
