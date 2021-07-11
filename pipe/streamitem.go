@@ -29,6 +29,7 @@ func newItem(ctx context.Context, index int, payload []byte) StreamItem {
 		payload: make([]byte, len(payload)),
 	}
 	copy(s.payload, payload)
+
 	return s
 }
 

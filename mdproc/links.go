@@ -10,7 +10,6 @@ import (
 
 func FormatLinks(in chan pipe.StreamItem) chan pipe.StreamItem {
 	out := make(chan pipe.StreamItem)
-
 	go func() {
 
 		for b := range in {

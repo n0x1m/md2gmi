@@ -57,6 +57,7 @@ func wrap(m *fsm, data []byte) (*fsm, []byte) {
 	if scount = countStart(data, "<!--"); scount > 0 {
 		m.multiLineBlockMode += scount
 	}
+
 	if ecount = countEnd(data, "-->"); ecount > 0 {
 		m.multiLineBlockMode -= ecount
 	}
@@ -76,6 +77,7 @@ func wrap(m *fsm, data []byte) (*fsm, []byte) {
 	if ecount = countEnd(data, "-->"); ecount > 0 {
 		data = data[bytes.LastIndex(data, []byte("-->"))+3:]
 	}
+
 	return m, data
 }
 
@@ -100,6 +102,7 @@ func (m *fsm) softBlockFlush() {
 	if m.multiLineBlockMode > 0 {
 		return
 	}
+
 	m.blockFlush()
 }
 
@@ -123,6 +126,7 @@ func triggerBreak(data []byte) bool {
 	if len(data) == 0 || len(data) == 1 && data[0] == '\n' {
 		return true
 	}
+
 	switch data[len(data)-1] {
 	case '.':
 		fallthrough
@@ -131,6 +135,7 @@ func triggerBreak(data []byte) bool {
 	case ':':
 		return true
 	}
+
 	return false
 }
 
@@ -192,6 +197,7 @@ func normalText(m *fsm, data []byte) stateFn {
 
 	m.blockBuffer = append(m.blockBuffer, append(data, '\n')...)
 	m.softBlockFlush()
+
 	return normal
 }
 
