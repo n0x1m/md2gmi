@@ -18,7 +18,7 @@ type fsm struct {
 	out chan pipe.StreamItem
 
 	// combining multiple input lines
-	multiLineBlockMode bool
+	multiLineBlockMode int
 	blockBuffer        []byte
 	sendBuffer         []byte
 	// if we have a termination rule to abide, e.g. implied code fences
@@ -53,13 +53,38 @@ func (m *fsm) pipeline(in chan pipe.StreamItem) chan pipe.StreamItem {
 }
 
 func wrap(m *fsm, data []byte) (*fsm, []byte) {
-	if hasCommentStart(data) {
-		m.multiLineBlockMode = true
+	var scount, ecount int
+	if scount = countStart(data, "<!--"); scount > 0 {
+		m.multiLineBlockMode += scount
 	}
-	if hasCommentEnd(data) {
-		m.multiLineBlockMode = false
+	if ecount = countEnd(data, "-->"); ecount > 0 {
+		m.multiLineBlockMode -= ecount
+	}
+
+	// clip entire line
+	if m.multiLineBlockMode > 0 && scount-ecount == 0 {
+		data = data[:0]
+		return m, data
+	}
+
+	// clip data past first occurrence
+	if scount > 0 {
+		data = data[:bytes.Index(data, []byte("<!--"))]
+	}
+
+	// clip data past last occurrence
+	if ecount = countEnd(data, "-->"); ecount > 0 {
+		data = data[bytes.LastIndex(data, []byte("-->"))+3:]
 	}
 	return m, data
+}
+
+func countStart(data []byte, pattern string) int {
+	return bytes.Count(data, []byte(pattern))
+}
+
+func countEnd(data []byte, pattern string) int {
+	return bytes.Count(data, []byte(pattern))
 }
 
 func (m *fsm) sync() {
@@ -72,7 +97,7 @@ func (m *fsm) sync() {
 }
 
 func (m *fsm) softBlockFlush() {
-	if m.multiLineBlockMode {
+	if m.multiLineBlockMode > 0 {
 		return
 	}
 	m.blockFlush()
@@ -130,14 +155,6 @@ func isFence(data []byte) bool {
 
 func needsFence(data []byte) bool {
 	return len(data) >= 4 && string(data[0:4]) == "    "
-}
-
-func hasCommentStart(data []byte) bool {
-	return bytes.Contains(data, []byte("<!--"))
-}
-
-func hasCommentEnd(data []byte) bool {
-	return bytes.Contains(data, []byte("-->"))
 }
 
 func normalText(m *fsm, data []byte) stateFn {
