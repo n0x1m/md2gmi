@@ -20,6 +20,10 @@ comment -->
 > this is
 a quote
 
+*not a list*
+
+**also not a list**
+
  - this
 	- is
 * an unordered
@@ -42,6 +46,10 @@ and
 <!-- a comment -->
 
 > this is a quote
+
+*not a list*
+
+**also not a list**
 
 - this
 - is
@@ -66,6 +74,10 @@ this is code too
 	gmi = `# This is the Title!
 
 > this is a quote
+
+*not a list*
+
+**also not a list**
 
 - this
 - is
@@ -124,7 +136,7 @@ func TestPreproc(t *testing.T) {
 	t.Parallel()
 
 	s := pipe.New()
-	s.Use(mdproc.Preproc())
+	s.Use(mdproc.Preprocessor())
 	s.Handle(source(t, input), sink(t, preproc))
 }
 
@@ -132,9 +144,9 @@ func TestMd2Gmi(t *testing.T) {
 	t.Parallel()
 
 	s := pipe.New()
-	s.Use(mdproc.Preproc())
-	s.Use(mdproc.RemoveFrontMatter)
+	s.Use(mdproc.Preprocessor())
 	s.Use(mdproc.RemoveComments)
+	s.Use(mdproc.RemoveFrontMatter)
 	s.Use(mdproc.FormatHeadings)
 	s.Use(mdproc.FormatLinks)
 	s.Handle(source(t, input), sink(t, gmi))
