@@ -30,7 +30,6 @@ func main() {
 
 	s := pipe.New()
 	s.Use(mdproc.Preprocessor())
-	s.Use(mdproc.RemoveComments)
 	s.Use(mdproc.RemoveFrontMatter)
 	s.Use(mdproc.FormatHeadings)
 	s.Use(mdproc.FormatLinks)
