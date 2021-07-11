@@ -1,7 +1,7 @@
 # md2gmi
 
-Convert Markdown to Gemini [gemtext](https://gemini.circumlunar.space/docs/gemtext.gmi) gemtext with
-Go. Working with streams and pipes for UNIX like behavior utilizing Go channels. Processing streams
+Convert Markdown to Gemini [gemtext](https://gemini.circumlunar.space/docs/gemtext.gmi) with Go.
+Working with streams and UNIX pipes, utilizing Go channels. Processing streams
 line by line is probably slightly more complex than it needs to be as I was toying with channels and
 state machines.
 
