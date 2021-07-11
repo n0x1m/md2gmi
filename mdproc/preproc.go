@@ -62,7 +62,7 @@ func wrap(m *fsm, data []byte) (*fsm, []byte) {
 	}
 
 	// clip entire line
-	if m.multiLineBlockMode > 0 && scount-ecount == 0 {
+	if m.multiLineBlockMode > 0 {
 		data = data[:0]
 		return m, data
 	}

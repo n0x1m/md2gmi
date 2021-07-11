@@ -20,7 +20,8 @@ comment -->
 <!--
 multi line comment block, terminated.
 
-With a break line, <!-- and inline comments -->
+With a break line, <!-- and multi line
+ inline comments -->
 and [with a](link);
 -->
 
