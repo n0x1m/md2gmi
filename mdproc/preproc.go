@@ -61,8 +61,8 @@ func wrap(m *fsm, data []byte) (*fsm, []byte) {
 		m.multiLineBlockMode -= ecount
 	}
 
-	// clip entire line
-	if m.multiLineBlockMode > 0 {
+	// clip entire line if no control sequences present
+	if (m.multiLineBlockMode > 0 && scount == 0 && ecount == 0) || m.multiLineBlockMode > 1 {
 		data = data[:0]
 		return m, data
 	}
@@ -149,8 +149,8 @@ func handleList(data []byte) ([]byte, bool) {
 	return data, false
 }
 
-func isFence(data []byte) bool {
-	return len(data) >= 3 && string(data[0:3]) == "```"
+func hasFence(data []byte) bool {
+	return bytes.Contains(data, []byte("```"))
 }
 
 func needsFence(data []byte) bool {
@@ -169,7 +169,7 @@ func normalText(m *fsm, data []byte) stateFn {
 		return list
 	}
 
-	if isFence(data) {
+	if hasFence(data) {
 		m.blockBuffer = append(data, '\n')
 
 		return fence
@@ -215,7 +215,7 @@ func list(m *fsm, data []byte) stateFn {
 func fence(m *fsm, data []byte) stateFn {
 	m.blockBuffer = append(m.blockBuffer, append(data, '\n')...)
 	// second fence returns to normal
-	if isFence(data) {
+	if hasFence(data) {
 		m.softBlockFlush()
 
 		return normal
