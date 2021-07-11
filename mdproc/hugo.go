@@ -15,7 +15,7 @@ func RemoveFrontMatter(in chan pipe.StreamItem) chan pipe.StreamItem {
 		// delete the entire front matter
 		re := regexp.MustCompile(`---.*---`)
 		// but parse out the title as we want to reinject it
-		re2 := regexp.MustCompile(`title:[ "]*([a-zA-Z0-9 :!@#$%^&*)(]+)["]*`)
+		re2 := regexp.MustCompile(`title:[ "]*([a-zA-Z0-9 :!'@#$%^&*)(]+)["]*`)
 
 		for b := range in {
 			data := b.Payload()
