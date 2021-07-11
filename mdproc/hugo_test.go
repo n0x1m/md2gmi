@@ -1,158 +1,71 @@
 package mdproc_test
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/n0x1m/md2gmi/mdproc"
 	"github.com/n0x1m/md2gmi/pipe"
 )
 
-const (
-	input = `---
-title: "This is the Title!"
-categories: [a,b]
+func TestMdDocument2Gmi(t *testing.T) {
+	t.Parallel()
+
+	document := `---
+title: "Dre's log"
 ---
 
-<!-- a <!-- double -->
-comment -->
+nox, Latin "night; darkness"
+
+` + "```" + `
+	___
+	(o,o)  < nox.im
+	{` + "`" + `"'}    Fiat lux.
+	-"-"-
+` + "```" + `
+
+[Gemini](gemini://nox.im) · [RSS](/index.xml) · [About](/about) · [Github](https://github.com/n0x1m)<!-- · [Twitter](https://twitter.com/_noxim) -->
+
+Contact me via ` + "`" + `dre@nox.im` + "`" + `. You may use my [age](/snippets/actually-good-encryption/) public key to send me files securely: ` + "`" + `age1vpyptw64mz2vhtj7tvfh9saj0y8zy8fguety5n3wpmwzpkn0rd6swh02an` + "`" + `.
 
 <!--
-multi line comment block, terminated.
-
-With a break line, <!-- and multi line
- inline comments -->
-and [with a](link);
+First principles bottom up thinker and tinkerer. Contact me via dre@nox.im. Please use my [GnuPG key](/noxim.asc).
+Proudly made without PHP, Javascript, Ruby, Python and SQL.
 -->
 
-> this is
-a quote
-
-*not a list*
-
-**also not a list**
-
- - this
-	- is
-* an unordered
-  * list
-
-This is
-a paragraph with a link to the [gemini protocol](https://en.wikipedia.org/wiki/Gemini_(protocol)).
-
-` + "```" + `
-this is multi
-line code
-` + "```" + `
-
-and<!-- inline comment-->
-
-    this is code too`
-
-	preproc = `--- title: "This is the Title!" categories: [a,b] ---
-
-> this is a quote
-
-*not a list*
-
-**also not a list**
-
-- this
-- is
-- an unordered
-- list
-
-This is a paragraph with a link to the [gemini protocol](https://en.wikipedia.org/wiki/Gemini_(protocol)).
-
-` + "```" + `
-this is multi
-line code
-` + "```" + `
-
-and
-
-` + "```" + `
-this is code too
-` + "```" + `
+## Posts
 
 `
 
-	gmi = `# This is the Title!
+	gmiout := `# Dre's log
 
-> this is a quote
-
-*not a list*
-
-**also not a list**
-
-- this
-- is
-- an unordered
-- list
-
-This is a paragraph with a link to the gemini protocol[1].
-
-=> https://en.wikipedia.org/wiki/Gemini_(protocol) 1: gemini protocol
+nox, Latin "night; darkness"
 
 ` + "```" + `
-this is multi
-line code
+	___
+	(o,o)  < nox.im
+	{` + "`" + `"'}    Fiat lux.
+	-"-"-
 ` + "```" + `
 
-and
+Gemini[1] · RSS[2] · About[3] · Github[4]
 
-` + "```" + `
-this is code too
-` + "```" + `
+=> gemini://nox.im 1: Gemini
+=> /index.xml 2: RSS
+=> /about 3: About
+=> https://github.com/n0x1m 4: Github
+
+Contact me via ` + "`" + `dre@nox.im` + "`" + `. You may use my age[1] public key to send me files securely: ` + "`" + `age1vpyptw64mz2vhtj7tvfh9saj0y8zy8fguety5n3wpmwzpkn0rd6swh02an` + "`" + `.
+
+=> /snippets/actually-good-encryption/ 1: age
+
+## Posts
 
 `
-)
-
-func source(t *testing.T, in string) func() chan pipe.StreamItem {
-	t.Helper()
-
-	return func() chan pipe.StreamItem {
-		data := make(chan pipe.StreamItem, len(strings.Split(in, "\n")))
-		for _, line := range strings.Split(in, "\n") {
-			data <- pipe.NewItem(0, []byte(line))
-		}
-
-		close(data)
-
-		return data
-	}
-}
-
-func sink(t *testing.T, expected string) func(dest chan pipe.StreamItem) {
-	t.Helper()
-
-	return func(dest chan pipe.StreamItem) {
-		var data []byte
-		for in := range dest {
-			data = append(data, in.Payload()...)
-		}
-
-		if string(data) != expected {
-			t.Errorf("mismatch, expected '%s' but was '%s'", expected, data)
-		}
-	}
-}
-
-func TestPreproc(t *testing.T) {
-	t.Parallel()
-
-	s := pipe.New()
-	s.Use(mdproc.Preprocessor())
-	s.Handle(source(t, input), sink(t, preproc))
-}
-
-func TestMd2Gmi(t *testing.T) {
-	t.Parallel()
 
 	s := pipe.New()
 	s.Use(mdproc.Preprocessor())
 	s.Use(mdproc.RemoveFrontMatter)
 	s.Use(mdproc.FormatHeadings)
 	s.Use(mdproc.FormatLinks)
-	s.Handle(source(t, input), sink(t, gmi))
+	s.Handle(source(t, document), sink(t, gmiout))
 }
