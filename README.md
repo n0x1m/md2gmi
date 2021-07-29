@@ -1,9 +1,12 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/n0x1m/md2gmi)](https://goreportcard.com/report/github.com/n0x1m/md2gmi)
+[![GoDoc](https://godoc.org/github.com/n0x1m/md2gmi?status.svg)](https://godoc.org/github.com/n0x1m/md2gmi)
+
 # md2gmi
 
 Convert Markdown to Gemini [gemtext](https://gemini.circumlunar.space/docs/gemtext.gmi) with Go.
-Working with streams and UNIX pipes, utilizing Go channels. Processing streams
-line by line is probably slightly more complex than it needs to be as I was toying with channels and
-state machines.
+Working with streams and UNIX pipes, utilizing Go channels. Processing streams line by line is
+probably slightly more complex than it needs to be, as I was toying with channels and state
+machines.
 
 Internally md2gmi does a 1st pass that constructs the blocks of single lines for gemtext from one or
 multiple lines of an input stream. These blocks are then streamed to the 2nd passes. The 2nd pass
