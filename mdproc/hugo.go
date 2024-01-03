@@ -13,15 +13,14 @@ func RemoveFrontMatter(in chan pipe.StreamItem) chan pipe.StreamItem {
 
 	go func() {
 		// delete the entire front matter
-		re := regexp.MustCompile(`---.*---`)
-		// but parse out the title as we want to reinject it
-		re2 := regexp.MustCompile(`title:[ "]*([a-zA-Z0-9 :!'@#$%^&*)(]+)["]*`)
+		re := regexp.MustCompile(`[-+]{3}.*[-+]{3}`)
+		re_title := regexp.MustCompile(`title\s*[:=]\s*"*([a-zA-Z0-9 :!'@#$%^&*)(]+)["]\s*`)
 
 		for b := range in {
 			data := b.Payload()
 			for _, match := range re.FindAllSubmatch(data, -1) {
 				data = bytes.Replace(data, match[0], []byte(""), 1)
-				for _, title := range re2.FindAllSubmatch(match[0], 1) {
+				for _, title := range re_title.FindAllSubmatch(match[0], 1) {
 					// add title
 					data = []byte(fmt.Sprintf("# %s\n\n", title[1]))
 				}
